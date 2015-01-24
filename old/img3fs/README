@@ -1,0 +1,12 @@
+FUSE img3 filesystem
+read/write/encryption support
+
+Usage example:
+
+mkdir /tmp/img3
+img3fs /tmp/img3 038-0032-002.dmg -iv 9b20ae16bebf4cf1b9101374c3ab0095 -key 06849aead2e9a6ca8a82c3929bad5c2368942e3681a3d5751720d2aacf0694c0
+hdiutil attach /tmp/img3/DATA.dmg
+rm -rf /Volumes/ramdisk/usr/local/standalone/firmware/*
+echo "Hello World!" > /Volumes/ramdisk/hello.txt
+hdiutil eject /Volumes/ramdisk
+umount /tmp/img3

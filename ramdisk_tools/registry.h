@@ -1,0 +1,1 @@
+void get_device_infos(CFMutableDictionaryRef out);
