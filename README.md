@@ -1,5 +1,5 @@
 
-- https://github.com/dinosec/iphone-dataprotection
+iphone-dataprotection:
 
 iPhone Data Protection Tools cloned from https://code.google.com/p/iphone-dataprotection on January 24, 2015.
 
