@@ -1,7 +1,16 @@
 
+- https://github.com/dinosec/iphone-dataprotection
+
 iPhone Data Protection Tools cloned from https://code.google.com/p/iphone-dataprotection on January 24, 2015.
 
-Code ("build_tools.sh") slightly changed for OS X Yosemite (v 10.10.x) with Xcode 6.1.x:
+Code slightly changed for OS X Yosemite (v 10.10.x) with Xcode 6.1.x:
 - "build_tools.sh": SDK references point to 10.10
+- "demo_bruteforce.py" patched to obtain the three files used for the keychain-2.db in iOS 7.x
 
 By Raul Siles
+
+- References:
+
+Check https://github.com/dinosec/iphone-dataprotection for OS X Yosemite (v 10.10.x) with Xcode 5.1.1.
+
+Check https://github.com/dinosec/iphone-dataprotection-elcapitan for OS X El Capitan (v 10.11.x) with Xcode 7.3.x.
