@@ -117,7 +117,9 @@ class MBDB(object):
             # makedirs throw an exception, my code is ugly =)
             if record.is_directory():
                 try:
-                    os.makedirs(os.path.join(output_path, record.domain, record.path))
+                    # Convert path name to counter file system problems
+                    record_path=re.sub(r'[:|*<>?"]', "_", record_path)
+                    os.makedirs(os.path.join(output_path, record.domain, record_path))
                 except:
                     pass
 
