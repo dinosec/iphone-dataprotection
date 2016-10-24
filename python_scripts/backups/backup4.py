@@ -118,7 +118,7 @@ class MBDB(object):
             if record.is_directory():
                 try:
                     # Convert path name to counter file system problems
-                    record_path=re.sub(r'[:|*<>?"]', "_", record_path)
+                    record_path = re.sub(r'[:|*<>?"]', "_", record.path)
                     os.makedirs(os.path.join(output_path, record.domain, record_path))
                 except:
                     pass
