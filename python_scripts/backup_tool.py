@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from backups.backup3 import decrypt_backup3
 from backups.backup4 import MBDB
+from backups.backup10 import decrypt_backup10
 from keystore.keybag import Keybag
 from util import readPlist, makedirs
 import os
@@ -33,7 +34,7 @@ def extract_backup(backup_path, output_path, password=""):
     if not manifest.has_key("BackupKeyBag"):
         print "No BackupKeyBag in manifest, assuming iOS 3.x backup"
         decrypt_backup3(backup_path, output_path, password)
-    else:    
+    elif os.path.exists(backup_path + "/Manifest.mbdb"):
         mbdb = MBDB(backup_path)
     
         kb = Keybag.createWithBackupManifest(manifest, password)
@@ -48,6 +49,12 @@ def extract_backup(backup_path, output_path, password=""):
         
         print "You can decrypt the keychain using the following command : "
         print "python keychain_tool.py -d \"%s\" \"%s\"" % (output_path + "/KeychainDomain/keychain-backup.plist", output_path + "/Manifest.plist")
+    else:
+        if (manifest["IsEncrypted"]):
+            print "Not implemented yet..."
+            return
+
+        decrypt_backup10(backup_path, output_path)
 
 def extract_all():
     if sys.platform == "win32":
