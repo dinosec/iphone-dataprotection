@@ -1,7 +1,7 @@
 #!/usr/bin/python
 from backups.backup3 import decrypt_backup3
 from backups.backup4 import MBDB
-from backups.backup10 import decrypt_backup10
+from backups.backup10 import ManifestDB
 from keystore.keybag import Keybag
 from util import readPlist, makedirs
 import os
@@ -49,12 +49,25 @@ def extract_backup(backup_path, output_path, password=""):
         
         print "You can decrypt the keychain using the following command : "
         print "python keychain_tool.py -d \"%s\" \"%s\"" % (output_path + "/KeychainDomain/keychain-backup.plist", output_path + "/Manifest.plist")
-    else:
-        if (manifest["IsEncrypted"]):
-            print "Not implemented yet..."
-            return
 
-        decrypt_backup10(backup_path, output_path)
+    elif os.path.exists(backup_path + "/Manifest.db"):
+        manifset_db = ManifestDB(backup_path)
+
+        kb = Keybag.createWithBackupManifest(manifest, password)
+        if not kb:
+            return
+        manifest["password"] = password
+        makedirs(output_path)
+        plistlib.writePlist(manifest, output_path + "/Manifest.plist")
+
+        manifset_db.keybag = kb
+        manifset_db.extract_backup(output_path)
+
+        print "You can decrypt the keychain using the following command: "
+        print "python keychain_tool.py -d \"%s\" \"%s\"" % (output_path + "/KeychainDomain/keychain-backup.plist", output_path + "/Manifest.plist")
+
+    else:
+        print "No Manifest database found, Is it a complete backup?"
 
 def extract_all():
     if sys.platform == "win32":
