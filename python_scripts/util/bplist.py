@@ -5,6 +5,16 @@ import struct
 import plistlib
 from datetime import datetime, timedelta
 
+class BPListUID:
+    def __init__(self, uid):
+        self.uid = uid
+
+    def __repr__(self):
+        return "< UID: %s >"%(self.uid,)
+
+    def __str__(self):
+        return self.__repr__()
+
 class BPListWriter(object):
     def __init__(self, objects):
         self.bplist = ""
@@ -154,7 +164,7 @@ class BPlistReader(object):
         elif obj_type == 0x80: #    uid     1000 nnnn   ...     // nnnn+1 is # of bytes
             # FIXME: Accept as a string for now
             obj_count, objref = self.__resolveIntSize(obj_info, offset)
-            return plistlib.Data(self.data[objref:objref+obj_count])
+            return BPListUID(self.__unpackIntStruct(1,self.data[objref:objref+1]))
         elif obj_type == 0xA0: #    array   1010 nnnn   [int]   objref* // nnnn is count, unless '1111', then int count follows
             obj_count, objref = self.__resolveIntSize(obj_info, offset)
             arr = []

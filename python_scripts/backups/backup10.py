@@ -6,6 +6,7 @@ import plistlib
 from Crypto.Cipher import AES
 
 from util import readPlist, makedirs, parsePlist
+from util import bplist
 
 def warn(msg):
     print "WARNING: %s" % msg
@@ -25,27 +26,44 @@ class MBFile(object):
 
     def _parse_file_info(self):
         self.file_hash = None
-        if isinstance(self.file_info['$objects'][3], plistlib.Data):
-            self.file_hash = self.file_info['$objects'][3]
+        objects = self.file_info['$objects']
+        if objects[1].has_key('Digest'):
+            if isinstance(objects[1]['Digest'], plistlib.Data):
+                self.file_hash = objects[1]['Digest']
+            elif isinstance(objects[1]['Digest'], bplist.BPListUID) and len(objects) >= objects[1]['Digest'].uid:
+                p = objects[objects[1]['Digest'].uid]
+                if isinstance(p, plistlib.Data):
+                    self.file_hash = p.data
+                elif isinstance(p, dict) and p.has_key('NS.data'):
+                    self.file_hash = p['NS.data']
+
         self.protection_class = 0
         self.encryption_key = None
-        self.protection_class = self.file_info['$objects'][1]['ProtectionClass']
-        self.file_size = self.file_info['$objects'][1]['Size']
-        self.mode = self.file_info['$objects'][1]['Mode']
-        if len(self.file_info['$objects']) >= 5 and type(self.file_info['$objects'][4]) == dict:
-            if self.file_info['$objects'][4].has_key('NS.data'):
-                self.encryption_key = self.file_info['$objects'][4]['NS.data'].data
+        self.protection_class = objects[1]['ProtectionClass']
+        self.file_size = objects[1]['Size']
+        self.mode = objects[1]['Mode']
+        self.encryption_key = None
+
+        if objects[1].has_key('EncryptionKey'):
+            if isinstance(objects[1]['EncryptionKey'], plistlib.Data):
+                self.encryption_key = objects[1]['EncryptionKey']
+            elif isinstance(objects[1]['EncryptionKey'], bplist.BPListUID) and len(objects) >= objects[1]['EncryptionKey'].uid:
+                p = objects[objects[1]['EncryptionKey'].uid]
+                if isinstance(p, plistlib.Data):
+                    self.encryption_key = p.data
+                elif isinstance(p, dict) and p.has_key('NS.data'):
+                    self.encryption_key = p['NS.data'].data
 
         self.target = None
-        if self.is_symbolic_link() and isinstance(self.file_info['$objects'][3], str):
-            self.target  = self.file_info['$objects'][3]
-        # print self.encryption_key
-        # print self.file_size
-        # print "is regular file", " yes" if self.is_regular_file() else "no"
-
-        if self.is_symbolic_link():
-            print self.relative_path
-            print self.target
+        if objects[1].has_key('Target'):
+            if isinstance(objects[1]['Target'], str):
+                self.target = objects[1]['Target']
+            elif isinstance(objects[1]['Target'], bplist.BPListUID) and len(objects) >= objects[1]['Target'].uid:
+                p = objects[objects[1]['Target'].uid]
+                if isinstance(p, str):
+                    self.target = p
+                elif isinstance(p, dict) and p.has_key('NS.string'):
+                    self.target = p['NS.string']
 
 
     def type(self):
@@ -59,6 +77,7 @@ class MBFile(object):
 
     def is_directory(self):
         return self.type() == MASK_DIRECTORY
+
 
 class ManifestDB(object):
     def __init__ (self, path):
