@@ -97,7 +97,10 @@ class ManifestDB(object):
                 relative_path = record[2]
                 flags = record[3]
                 file_blob = record[4]
-                self.files[filename] = MBFile(domain, relative_path, flags, file_blob)
+                if flags == 16:
+                    warn("Flags == 16 for {0} {1} ({2})".format(domain, relative_path, file_blob))
+                else:
+                    self.files[filename] = MBFile(domain, relative_path, flags, file_blob)
 
         finally:
             conn.close()
@@ -141,7 +144,7 @@ class ManifestDB(object):
         if record.encryption_key is not None and self.keybag: # file is encrypted!
             key = self.keybag.unwrapKeyForClass(record.protection_class, record.encryption_key[4:])
             if not key:
-                warn("Cannot unwrap key")
+                warn("Cannot unwrap key for {0}".format(out_file))
                 return
             aes = AES.new(key, AES.MODE_CBC, "\x00"*16)
 
