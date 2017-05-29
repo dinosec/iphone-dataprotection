@@ -7,6 +7,7 @@ from util import readPlist, makedirs
 import os
 import sys
 import plistlib
+import struct
 
 showinfo = ["Device Name", "Display Name", "Last Backup Date", "IMEI",
             "Serial Number", "Product Type", "Product Version", "iTunes Version"]
@@ -51,15 +52,24 @@ def extract_backup(backup_path, output_path, password=""):
         print "python keychain_tool.py -d \"%s\" \"%s\"" % (output_path + "/KeychainDomain/keychain-backup.plist", output_path + "/Manifest.plist")
 
     elif os.path.exists(backup_path + "/Manifest.db"):
-        manifset_db = ManifestDB(backup_path)
+        if 'ManifestKey' in manifest:
+            kb = Keybag.createWithBackupManifest(manifest, password, ios102=True)
+        else:
+            kb = Keybag.createWithBackupManifest(manifest, password)
 
-        kb = Keybag.createWithBackupManifest(manifest, password)
         if not kb:
             return
         manifest["password"] = password
         makedirs(output_path)
         plistlib.writePlist(manifest, output_path + "/Manifest.plist")
 
+        manifest_key = None
+        if 'ManifestKey' in manifest:
+            clas = struct.unpack('<L', manifest['ManifestKey'].data[:4])[0]
+            wkey = manifest['ManifestKey'].data[4:]
+            manifest_key = kb.unwrapKeyForClass(clas, wkey)
+
+        manifset_db = ManifestDB(backup_path, key=manifest_key)
         manifset_db.keybag = kb
         manifset_db.extract_backup(output_path)
 
