@@ -90,7 +90,7 @@ class ManifestDB(object):
         #If a key is provided, try to decrypt the DB
         if key:
             mdb_path_encrypted = mdb_path
-            mdb_path = os.path.join(path,'Manifest.db-decypted')
+            mdb_path = os.path.join(path,'Manifest.db-decrypted')
             self.decrypt_manifest_db(mdb_path_encrypted, mdb_path, key)
 
         conn = sqlite3.connect(mdb_path)
