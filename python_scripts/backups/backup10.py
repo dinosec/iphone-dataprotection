@@ -80,12 +80,20 @@ class MBFile(object):
 
 
 class ManifestDB(object):
-    def __init__ (self, path):
+    def __init__ (self, path, key=None):
         self.files = {}
         self.backup_path = path
         self.keybag = None
 
-        conn = sqlite3.connect(os.path.join(path,'Manifest.db'))
+        mdb_path = os.path.join(path,'Manifest.db')
+
+        #If a key is provided, try to decrypt the DB
+        if key:
+            mdb_path_encrypted = mdb_path
+            mdb_path = os.path.join(path,'Manifest.db-decrypted')
+            self.decrypt_manifest_db(mdb_path_encrypted, mdb_path, key)
+
+        conn = sqlite3.connect(mdb_path)
 
         try:
             conn.row_factory = sqlite3.Row
@@ -105,6 +113,38 @@ class ManifestDB(object):
         finally:
             conn.close()
 
+    @staticmethod
+    def decrypt_manifest_db(path_in, path_out, key):
+        """
+        Will decrypt the Manifest.db file using the provided key.
+
+        TODO: merge with method _extract_file
+        """
+        aes = AES.new(key, AES.MODE_CBC, "\x00"*16)
+        
+        f_in = file(path_in, 'rb')
+        f_out = file(path_out, 'wb')
+        
+        while True:
+            data = f_in.read(8192)
+            if not data:
+                break
+
+            data2 = data = aes.decrypt(data)
+            f_out.write(data)
+        
+        f_in.close()
+
+        c = data2[-1]
+        i = ord(c)
+
+        if i < 17 and data2.endswith(c*i):
+            f_out.truncate(f_out.tell() - i)
+
+        else:
+            print "Bad padding, last byte = 0x%x !" % i
+
+        f_out.close()
 
     def extract_backup(self, output_path):
         for mbfile in self.files.itervalues():

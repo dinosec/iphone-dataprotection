@@ -3,6 +3,7 @@ from crypto.aes import AESdecryptCBC
 from crypto.aeswrap import AESUnwrap
 from crypto.aeswrap import AESwrap
 from crypto.curve25519 import curve25519
+from Crypto.Hash import SHA256
 from hashlib import sha256, sha1
 from util.bplist import BPlistReader
 from util.tlv import loopTLVBlocks, tlvToDict
@@ -127,10 +128,10 @@ class Keybag(object):
         return kb
     
     @staticmethod
-    def createWithBackupManifest(manifest, password, deviceKey=None):
+    def createWithBackupManifest(manifest, password, deviceKey=None, ios102=False):
         kb = Keybag(manifest["BackupKeyBag"].data)
         kb.deviceKey = deviceKey
-        if not kb.unlockBackupKeybagWithPasscode(password):
+        if not kb.unlockBackupKeybagWithPasscode(password, ios102=ios102):
             print "Cannot decrypt backup keybag. Wrong password ?"
             return
         return kb
@@ -163,18 +164,46 @@ class Keybag(object):
         if currentClassKey:
             self.classKeys[currentClassKey["CLAS"] & 0xF] = currentClassKey
 
-    def getPasscodekeyFromPasscode(self, passcode):
+    def getPasscodekeyFromPasscode(self, passcode, ios102=False):
+        """
+        Generate a passcode key from the raw passcode provided using the keybag data.
+
+        Parameters
+        ----------
+        passcode : str
+            The passcode provided to decrypt the keybag
+        ios102 : bool
+            Will trigger the use of the iOS 10.2 method, which added an additional step.
+
+        Returns
+        -------
+        str
+            Passcode key in a binary format.
+
+        """
         if self.type == BACKUP_KEYBAG or self.type == OTA_KEYBAG:
+            if ios102:
+                """ Additional step introduce by iOS 10.2
+
+                Following this post:
+                https://github.com/horrorho/InflatableDonkey/issues/41#issuecomment-261927890
+                """
+                print "Generating the password key for iOS 10.2+. May take a while..."
+                passcode = PBKDF2(passcode,
+                                  self.attrs["DPSL"],
+                                  iterations=self.attrs["DPIC"],
+                                  digestmodule=SHA256
+                           ).read(32)
             return PBKDF2(passcode, self.attrs["SALT"], iterations=self.attrs["ITER"]).read(32)
         else:
             #Warning, need to run derivation on device with this result
             return PBKDF2(passcode, self.attrs["SALT"], iterations=1).read(32)
     
-    def unlockBackupKeybagWithPasscode(self, passcode):
+    def unlockBackupKeybagWithPasscode(self, passcode, ios102=False):
         if self.type != BACKUP_KEYBAG and self.type != OTA_KEYBAG:
             print "unlockBackupKeybagWithPasscode: not a backup keybag"
             return False
-        return self.unlockWithPasscodeKey(self.getPasscodekeyFromPasscode(passcode))
+        return self.unlockWithPasscodeKey(self.getPasscodekeyFromPasscode(passcode, ios102=ios102))
 
     def unlockAlwaysAccessible(self):
         for classkey in self.classKeys.values():
