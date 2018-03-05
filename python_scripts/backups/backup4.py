@@ -147,7 +147,13 @@ class MBDB(object):
         out_file = re.sub(r'[:|*<>?"]', "_", out_file)
         output_path = os.path.join(output_path, record.domain, out_file)
         print("Writing %s" % output_path)
-        f2 = file(output_path, 'wb')
+
+        try:
+            f2 = file(output_path, 'wb')
+        
+        except:
+            warn("File %s could not be created (path too long?)" % output_path)
+            return
 
         aes = None
 
